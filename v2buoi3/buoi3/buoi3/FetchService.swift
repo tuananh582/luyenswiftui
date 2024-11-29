@@ -50,7 +50,8 @@ struct FetchService {
         
         return characters[0]
     }
-    func fetchDeadth(for character:String) async throws -> Death?{
+
+    func fetchDeadth(for character: String) async throws -> Death? {
         let fetchURL = baseURL.appending(path: "deaths")
         let (data, response) = try await URLSession.shared.data(from: fetchURL)
         // Handle response // 200 meaning everything is good
@@ -61,12 +62,28 @@ struct FetchService {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let deaths = try decoder.decode([Death].self, from: data)
-        for death in deaths{
-            if death.character == character{
+        for death in deaths {
+            if death.character == character {
                 return death
             }
         }
         return nil
+    }
+    func fetchEpisode(from show: String) async throws -> Episode {
+        // Build fetch URL
+        let episodeURL = baseURL.appending(path: "episodes")
+        let fetchUrl = episodeURL.appending(queryItems: [URLQueryItem(name: "production", value: show)])
+        // Fetch data
+        let (data, response) = try await URLSession.shared.data(from: fetchUrl)
+        // Handle response // 200 meaning everything is good
+        guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+            throw FetchError.badResponse
+        }
         
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let episodes = try decoder.decode([Episode].self, from: data)
+        
+        return episodes.randomElement()!
     }
 }
